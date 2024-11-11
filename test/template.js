@@ -1,3 +1,4 @@
+import { beforeAll, expect, test } from 'vitest'
 import { getTemplateData, getRenderList } from '../src/template.js'
 import ShadowGuard from '../src/shadow/index.js'
 import gundam from '../src/coupons/gundam.js'
@@ -10,7 +11,7 @@ const cookie = createMTCookie(tokens[0].token)
 
 beforeAll(() => guard.init(gundam.getActUrl(wxfwhActConfs[0].gid)))
 
-test('Test getTemplateData', async () => {
+test('GetTemplateData', async () => {
   const res = await getTemplateData(cookie, wxfwhActConfs[0].gid, guard)
 
   return expect(res).toMatchObject({
@@ -21,7 +22,7 @@ test('Test getTemplateData', async () => {
   })
 })
 
-test('Test getRenderList', async () => {
+test('GetRenderList', async () => {
   const renderList = await getRenderList(
     cookie,
     { gundamViewId: '1I9uL6', pageId: 544003, gdId: 466632 },

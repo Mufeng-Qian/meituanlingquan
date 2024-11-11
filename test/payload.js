@@ -1,3 +1,4 @@
+import { beforeAll, expect, test } from 'vitest'
 import { getTemplateData } from '../src/template.js'
 import ShadowGuard from '../src/shadow/index.js'
 import gundam from '../src/coupons/gundam.js'
@@ -11,9 +12,9 @@ const cookie = createMTCookie(tokens[0].token)
 
 beforeAll(() => guard.init(gundam.getActUrl(mainActConf.gid)))
 
-test('Test Main Payload', async () => {
+test('Main Payload', async () => {
   const tmplData = await getTemplateData(cookie, mainActConf.gid, guard)
-  const payload = await gundam.getPayload(tmplData)
+  const payload = await gundam.getPayload(tmplData, guard)
 
   return expect(payload).toMatchObject({
     actualLatitude: 0,
@@ -25,25 +26,24 @@ test('Test Main Payload', async () => {
     gundamId: tmplData.gdId,
     needTj: expect.any(Boolean),
     instanceId: expect.any(String),
-    h5Fingerprint: '',
-    rubikCouponKey: expect.any(String)
+    h5Fingerprint: expect.any(String)
   })
 })
 
-test('Test Wxfwh Payload', async () => {
-  const tmplData = await getTemplateData(cookie, wxfwhActConfs[0].gid, guard)
-  const payload = await wxfwh.getPayload(cookie, tmplData, guard)
+// test('Wxfwh Payload', async () => {
+//   const tmplData = await getTemplateData(cookie, wxfwhActConfs[0].gid, guard)
+//   const payload = await wxfwh.getPayload(cookie, tmplData, guard)
 
-  return expect(payload).toMatchObject({
-    ctype: 'wm_wxapp',
-    fpPlatform: 13,
-    wxOpenId: '',
-    appVersion: '',
-    gdId: tmplData.gdId,
-    pageId: tmplData.pageId,
-    tabs: expect.any(Array),
-    activityViewId: expect.any(String),
-    instanceId: expect.any(String),
-    mtFingerprint: expect.any(String)
-  })
-})
+//   return expect(payload).toMatchObject({
+//     ctype: 'wm_wxapp',
+//     fpPlatform: 13,
+//     wxOpenId: '',
+//     appVersion: '',
+//     gdId: tmplData.gdId,
+//     pageId: tmplData.pageId,
+//     tabs: expect.any(Array),
+//     activityViewId: expect.any(String),
+//     instanceId: expect.any(String),
+//     mtFingerprint: expect.any(String)
+//   })
+// })

@@ -1,8 +1,9 @@
-import fetch from '../fetch.js'
+import request from '../request.js'
 import {
   formatUrl,
   genMetaData,
-  getFingerprint,
+  getH5Fp,
+  getH5Dfp,
   getMtgSig,
   getReqSig
 } from './guard.js'
@@ -10,6 +11,7 @@ import { guardVersion, csecPlatform, yodaReady } from './const.js'
 
 class ShadowGuard {
   version = guardVersion
+  h5fp = ''
   fingerprint = ''
   meta = {}
 
@@ -24,7 +26,8 @@ class ShadowGuard {
     actUrl = actUrl instanceof URL ? actUrl.toString() : actUrl
 
     this.meta = await genMetaData(actUrl, this.version)
-    this.fingerprint = await getFingerprint(this.meta, this.version)
+    this.fingerprint = await getH5Dfp(this.meta, this.version)
+    this.h5fp = await getH5Fp(actUrl)
 
     if (!this.context.dfpId) {
       this.context.dfpId = await this.getWebDfpId(this.fingerprint)
@@ -37,7 +40,7 @@ class ShadowGuard {
   }
 
   async getWebDfpId(fingerprint) {
-    const res = await fetch.post(
+    const res = await request.post(
       'https://appsec-mobile.meituan.com/v1/webdfpid',
       {
         data: fingerprint
@@ -50,6 +53,7 @@ class ShadowGuard {
   async getReqSig(reqOpt) {
     const guardURL = new URL(formatUrl(reqOpt.url || ''))
 
+    guardURL.searchParams.append('gdBs', '')
     guardURL.searchParams.append('yodaReady', yodaReady)
     guardURL.searchParams.append('csecplatform', csecPlatform)
     guardURL.searchParams.append('csecversion', this.version)
@@ -60,27 +64,33 @@ class ShadowGuard {
     return { guardURL, reqSig }
   }
 
-  async getMtgSig(reqSig, isShort) {
+  async getMtgSig(reqSig, signType = 'url') {
     return getMtgSig(reqSig, {
       ...this.context,
-      isShort
+      signType
     })
   }
 
   /**
    * @param {FetchOptions} reqOpt
-   * @param {boolean} isShort
+   * @param {'url' | 'header'} signType
    * @returns
    */
-  async sign(reqOpt, isShort) {
+  async sign(reqOpt, signType) {
     if (!reqOpt) return reqOpt
 
     const { guardURL, reqSig } = await this.getReqSig(reqOpt)
-    const mtgSig = await this.getMtgSig(reqSig, isShort)
+    const res = await this.getMtgSig(reqSig, signType)
+    const mtgSig = JSON.stringify(res.data)
+    const headers = {}
 
-    guardURL.searchParams.append('mtgsig', JSON.stringify(mtgSig.data))
+    if (signType === 'header') {
+      headers.mtgsig = mtgSig
+    } else {
+      guardURL.searchParams.append('mtgsig', mtgSig)
+    }
 
-    return guardURL.toString()
+    return { url: guardURL.toString(), headers }
   }
 }
 
